@@ -2,7 +2,7 @@
 
 An intelligent email management system with AI-powered automation.
 
-## 🚀 Quick Start with Docker
+## Quick Start with Docker
 
 ### Prerequisites
 - Docker & Docker Compose installed
@@ -50,14 +50,14 @@ docker compose up -d --build
 docker compose exec backend python manage_db.py stats
 ```
 
-## 📊 Development Status
+## Development Status
 
-✅ Phase 1: Foundation & Git Setup - Complete  
-✅ Phase 2: Backend Core (FastAPI + PostgreSQL) - Complete  
-✅ Phase 3: Docker & Containerization - Complete  
-🚧 Phase 4: AI Processing Pipeline - In Progress  
+Phase 1: Foundation & Git Setup - Complete  
+Phase 2: Backend Core (FastAPI + PostgreSQL) - Complete  
+Phase 3: Docker & Containerization - Complete  
+Phase 4: AI Processing Pipeline - In Progress  
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Backend:** FastAPI
 - **Database:** PostgreSQL
@@ -66,7 +66,7 @@ docker compose exec backend python manage_db.py stats
 - **Frontend:** Streamlit (coming soon)
 - **Deployment:** Docker
 
-## 📝 API Endpoints
+## API Endpoints
 
 - `GET /` - API information
 - `GET /health` - Health check
@@ -75,7 +75,7 @@ docker compose exec backend python manage_db.py stats
 - `GET /emails/fetch` - Fetch recent emails
 - `GET /emails/profile` - Get Gmail profile
 
-## 🔐 Environment Variables
+## Environment Variables
 ```env
 DATABASE_URL=postgresql://postgres:postgres@postgres:5432/email_assistant
 SECRET_KEY=your-secret-key
@@ -84,12 +84,12 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
 ```
 
-## 📚 Learning Resources
+## Learning Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Docker Documentation](https://docs.docker.com/)
 - [PostgreSQL Guide](https://www.postgresql.org/docs/)
 
-## 📄 License
+## License
 
 MIT License
