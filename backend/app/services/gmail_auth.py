@@ -13,7 +13,7 @@ SCOPES = [
 def get_google_auth_url():
     flow = Flow.from_client_config(
         {
-            "web":{
+            "web": {
                 "client_id": settings.GOOGLE_CLIENT_ID,
                 "client_secret": settings.GOOGLE_CLIENT_SECRET,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -21,17 +21,18 @@ def get_google_auth_url():
                 "redirect_uris": [settings.GOOGLE_REDIRECT_URI]
             }
         },
-        scope=SCOPES,
+        scopes=SCOPES,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
-
+    
     auth_url, _ = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
         prompt='consent'
     )
-
+    
     return auth_url
+
 
 def exchange_code_for_token(code: str):
     flow = Flow.from_client_config(
@@ -44,7 +45,7 @@ def exchange_code_for_token(code: str):
                 "redirect_uris": [settings.GOOGLE_REDIRECT_URI]
             }
         },
-        scope=SCOPES,
+        scopes=SCOPES,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
 

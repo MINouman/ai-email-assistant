@@ -7,6 +7,7 @@ from app.models.models import User
 from datetime import datetime
 from fastapi.responses import RedirectResponse
 from app.services.gmail_auth import get_google_auth_url, exchange_code_for_token
+from app.services.gmail_service import fetch_emails, get_user_profile
 
 Base.metadata.create_all(bind=engine)
 
@@ -78,11 +79,45 @@ def auth_callback(code: str, db: Session = Depends(get_db)):
         else: 
             db.add(user)
         
+        db.commit()
+        db.refresh(user)
+
         return {
             "status": "success",
             "message": "Authentication successful!",
             "user_email": user.email
         }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+
+@app.get("/emails/fetch")
+def fetch_user_emails(db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail = "User not Authenticated")
+    
+    try:
+        emails = fetch_emails(user.google_access_token, max_results=5)
+        return {
+            "status": "success",
+            "count": len(emails),
+            "emails": emails
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail = str(e))
+    
+
+@app.get("/email/profile")
+def get_gmail_profile(db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail= "User not authenticated")
+    try:
+        profile = get_user_profile(user.google_access_token)
+        return profile
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
