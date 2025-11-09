@@ -8,6 +8,7 @@ from datetime import datetime
 from fastapi.responses import RedirectResponse
 from app.services.gmail_auth import get_google_auth_url, exchange_code_for_token
 from app.services.gmail_service import fetch_emails, get_user_profile
+from sqlalchemy import text
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,7 +36,7 @@ def root():
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
             "database": "connected"
