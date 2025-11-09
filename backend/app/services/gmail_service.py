@@ -11,7 +11,7 @@ def fetch_emails(access_token: str, max_results: int = 10):
     results = service.users().messages().list(    
         userId = 'me',
         maxResults=max_results,
-        lableIds=['INBOX']
+        labelIds=['INBOX']
     ).execute()
 
     messages = results.get('messages', [])
