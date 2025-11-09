@@ -1,0 +1,42 @@
+version: '3.8'
+
+service:
+  postgres:
+    image: postgres:15-alpine
+    container_name: email_assistant_db
+    environment:
+      POSTGRES_USER: postgres
+      POstGRES_PASSWORD: hardpass1
+      POSTGRES_DB: email_assistant_db
+    ports:
+      -"5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+        context: ./backend
+        dockerfile: Dockerfile
+    container_name: email_assistant_backend
+    ports:
+      - "8000:8000"
+    environemnt:
+      DATABASE_URL: postgresql://postgres:hardpass1@postgres:5432/email_assistant_db
+      SECRET_KEY: ${SECRET_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
