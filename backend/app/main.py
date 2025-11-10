@@ -20,6 +20,10 @@ from app.services.email_service import (
 )
 from app.models.models import Email
 
+from app.services.notifications.telegram_service import telegram_service
+from app.services.calendar_service import calendar_service
+
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -367,3 +371,93 @@ def get_email_details(email_id: int, db: Session = Depends(get_db)):
             "processed_at": email.processed_at
         }
     }
+
+@app.get("/notifications/test")
+def test_telegram():
+    result = telegram_service.test_connection()
+    return result
+
+@app.post("/notifications/send")
+def send_custom_notification(message: str):
+    success = telegram_service.send_message(f"📢 <b>Custom Message</b>\n\n{message}")
+    
+    if success:
+        return {"status": "success", "message": "Notification sent"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send notification")
+
+
+@app.get("/notifications/daily-summary")
+def send_daily_summary(db: Session = Depends(get_db)):
+    user = db.query(User).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    stats = get_email_statistics(db, user.id)
+    success = telegram_service.notify_daily_summary(stats)
+    
+    if success:
+        return {"status": "success", "message": "Daily summary sent"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send summary")
+
+@app.get("/calendar/events")
+def list_calendar_events(max_results: int = 10, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+    
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    if not calendar_service.initialize_service(user.google_access_token):
+        raise HTTPException(status_code=500, detail="Failed to initialize calendar")
+    
+    events = calendar_service.list_upcoming_events(max_results)
+    
+    return {
+        "status": "success",
+        "count": len(events),
+        "events": events
+    }
+
+
+@app.post("/calendar/create-event")
+def create_calendar_event(
+    summary: str,
+    description: str,
+    start_time: str,
+    duration_minutes: int = 60,
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).first()
+
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+
+    if not calendar_service.initialize_service(user.google_access_token):
+        raise HTTPException(status_code=500, detail="Failed to initialize calendar")
+
+    try:
+        from dateutil import parser
+        import pytz
+        dt = parser.parse(start_time)
+        if dt.tzinfo is None:
+            dt = pytz.UTC.localize(dt)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid datetime format: {e}")
+
+    result = calendar_service.create_event(
+        summary=summary,
+        description=description,
+        start_time=dt,
+        duration_minutes=duration_minutes
+    )
+
+    if result:
+        return {
+            "status": "success",
+            "event": result
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create event")
