@@ -45,7 +45,7 @@ tiktoken==0.5.2
 
 # API Clients
 groq==0.4.1
-google-generativeai==0.3.2
+google-generativeai>=0.7.0,<0.8.0
 
 # Task Queue & Caching
 redis==5.0.1
