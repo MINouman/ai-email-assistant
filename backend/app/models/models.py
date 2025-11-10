@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship 
 from sqlalchemy.sql import func
 from app.database import Base
@@ -29,6 +29,7 @@ class Email(Base):
     message_id = Column(String, unique=True, index=True)
     thread_id = Column(String, index=True)
     subject = Column(String)
+    sender = Column(String)
     recipient = Column(String)
     body_text = Column(Text)
     received_at = Column(DateTime(timezone=True))
@@ -36,7 +37,11 @@ class Email(Base):
     #AI Processing
     summary = Column(Text, nullable=True)
     intent = Column(String, nullable=True)
+    priority = Column(String, nullable=True)
+    entities = Column(JSON, nullable=True)
+    reply_suggestions = Column(JSON, nullable=True)
     is_processed = Column(Boolean, default=False)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
 
     #Metadata
     is_read = Column(Boolean, default=False)
