@@ -13,6 +13,12 @@ from sqlalchemy import text
 from app.services.ai.email_processor import email_processor
 from app.redis_client import redis_client
 
+from app.services.email_service import (
+    fetch_and_save_emails,
+    get_user_emails, 
+    get_email_statistics
+)
+from app.models.models import Email
 
 Base.metadata.create_all(bind=engine)
 
@@ -216,3 +222,146 @@ def clear_cache():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.post("/emails/sync")
+def sync_emails(max_results: int=10, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail="User not Authorized")
+    
+    try:
+        emails = fetch_and_save_emails(db, user, max_results)
+
+        return {
+            "status": "success",
+            "message": f"Synced and processed {len(emails)} emails",
+            "count": len(emails)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/emails/list")
+def list_emails(
+    skip: int = 0,
+    limit: int = 20, 
+    priority: str = None,
+    intent: str = None,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    emails = get_user_emails(db, user.id, skip, limit, priority, intent)
+
+    email_list = []
+    for email in emails:
+        email_list.append({
+            "id": email.id,
+            "message_id": email.message_id,
+            "subject": email.subject,
+            "sender": email.sender,
+            "summary": email.summary,
+            "intent": email.intent,
+            "priority": email.priority,
+            "entities": email.entities,
+            "reply_suggestions": email.reply_suggestions,
+            "is_read": email.is_read,
+            "is_important": email.is_important,
+            "received_at": email.received_at,
+            "processed_at": email.processed_at
+        })
+    
+    return {
+        "status": "success",
+        "count": len(email_list),
+        "emails": email_list
+    }
+
+@app.get("/email/statistics")
+def email_statistics(db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    stats = get_email_statistics(db, user.id)
+
+    return {
+        "status": "success",
+        "statistics": stats
+    }
+
+@app.get("/emails/{email_id}")
+def get_email_details(email_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    email = db.query(Email).filter(
+        Email.id == email_id, 
+        Email.user_id == user.id
+    ).first()
+
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    return {
+        "status": "success",
+        "email": {
+            "id": email.id,
+            "message_id": email.message_id,
+            "thread_id": email.thread_id,
+            "subject": email.subject,
+            "sender": email.sender,
+            "body": email.body_text,
+            "summary": email.summary,
+            "intent": email.intent,
+            "priority": email.priority,
+            "entities": email.entities,
+            "reply_suggestions": email.reply_suggestions,
+            "is_read": email.is_read,
+            "is_important": email.is_important,
+            "received_at": email.received_at,
+            "processed_at": email.processed_at
+        }
+    }
+
+@app.patch("email/{email_id}/read")
+def mark_email_as_read(email_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User Not authenticated")
+    
+    email = db.query(Email).filter(
+        Email.id == email_id,
+        Email.user_id == user.id
+    ).first()
+
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    email.is_read = True
+    db.commit()
+
+    return{
+        "status": "success",
+        "message":"email marked as read"
+    }
+
+@app.get("/emails/filter/high-priority")
+def get_high_priority_emails(db: Session = Depends(get_db)):
+    return list_emails(priority="high", db=db)
+
+@app.get("/emails/filter/meetings")
+def get_meeting_emails(db: Session = Depends(get_db)):
+    return list_emails(intent="meeting", db=db)
+
+@app.get("/email/filter/urgent")
+def get_urgent_emails(db: Session = Depends(get_db)):
+    return list_emails(intent="urgent", db=db)
