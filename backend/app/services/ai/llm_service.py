@@ -42,7 +42,7 @@ Rules:
     - Be clear and professional
     - If there's a meeting or deadline, highlight it
 """), 
-                ("User", "Subject: {subject}\n\nContent:\n{content}")
+                ("user", "Subject: {subject}\n\nContent:\n{content}")
             ])
             chain = prompt | self.llm | StrOutputParser()
 

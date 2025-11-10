@@ -70,7 +70,7 @@ class EmailProcessor:
         for email in emails:
             try: 
                 result = self.process_email(email)
-                result.append(result)
+                results.append(result)
             except Exception as e:
                 logger.error(f"Error processing email {email.get('message_id')}: {e}")
                 results.append ({
