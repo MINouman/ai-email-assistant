@@ -77,19 +77,10 @@ Phase 4: AI Processing Pipeline - In Progress
 
 ## Environment Variables
 ```env
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/email_assistant
+DATABASE_URL=postgresql://usename:password@postgres:5432/email_assistant
 SECRET_KEY=your-secret-key
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
 ```
 
-## Learning Resources
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Docker Documentation](https://docs.docker.com/)
-- [PostgreSQL Guide](https://www.postgresql.org/docs/)
-
-## License
-
-MIT License
