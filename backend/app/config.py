@@ -29,12 +29,20 @@ class Settings(BaseSettings):
     GOOGLE_AI_API_KEY: Optional[str] = None
 
     #AI Settings
-    AI_MODEL: str = "llama3.3-70b-8192"
+    AI_MODEL: str = "llama-3.3-70b-versatile"
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     MAX_EMAIL_LENGTH: int = 4000
 
+    #Telegram Bot
+    TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_CHAT_ID: Optional[str]
+    TELEGRAM_ENABLED: bool = False
+
+    #Calendar
+    GOOGLE_CALENDAR_ENABLED: bool = False
+
+
     class Config:
-        # env_file = ".env"
         env_file = ENV_FILE
         env_file_encoding = "utf-8"
 
