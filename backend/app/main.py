@@ -281,7 +281,7 @@ def list_emails(
         "emails": email_list
     }
 
-@app.get("/email/statistics")
+@app.get("/emails/statistics")
 def email_statistics(db: Session = Depends(get_db)):
     user = db.query(User).first()
 
@@ -294,6 +294,43 @@ def email_statistics(db: Session = Depends(get_db)):
         "status": "success",
         "statistics": stats
     }
+
+
+@app.patch("email/{email_id}/read")
+def mark_email_as_read(email_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User Not authenticated")
+    
+    email = db.query(Email).filter(
+        Email.id == email_id,
+        Email.user_id == user.id
+    ).first()
+
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    email.is_read = True
+    db.commit()
+
+    return{
+        "status": "success",
+        "message":"email marked as read"
+    }
+
+@app.get("/emails/filter/high-priority")
+def get_high_priority_emails(db: Session = Depends(get_db)):
+    return list_emails(priority="high", db=db)
+
+@app.get("/emails/filter/meetings")
+def get_meeting_emails(db: Session = Depends(get_db)):
+    return list_emails(intent="meeting", db=db)
+
+@app.get("/emails/filter/urgent")
+def get_urgent_emails(db: Session = Depends(get_db)):
+    return list_emails(intent="urgent", db=db)
+
 
 @app.get("/emails/{email_id}")
 def get_email_details(email_id: int, db: Session = Depends(get_db)):
@@ -330,38 +367,3 @@ def get_email_details(email_id: int, db: Session = Depends(get_db)):
             "processed_at": email.processed_at
         }
     }
-
-@app.patch("email/{email_id}/read")
-def mark_email_as_read(email_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User Not authenticated")
-    
-    email = db.query(Email).filter(
-        Email.id == email_id,
-        Email.user_id == user.id
-    ).first()
-
-    if not email:
-        raise HTTPException(status_code=404, detail="Email not found")
-    
-    email.is_read = True
-    db.commit()
-
-    return{
-        "status": "success",
-        "message":"email marked as read"
-    }
-
-@app.get("/emails/filter/high-priority")
-def get_high_priority_emails(db: Session = Depends(get_db)):
-    return list_emails(priority="high", db=db)
-
-@app.get("/emails/filter/meetings")
-def get_meeting_emails(db: Session = Depends(get_db)):
-    return list_emails(intent="meeting", db=db)
-
-@app.get("/email/filter/urgent")
-def get_urgent_emails(db: Session = Depends(get_db)):
-    return list_emails(intent="urgent", db=db)
