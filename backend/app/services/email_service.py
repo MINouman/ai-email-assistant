@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict) -> Email:
+def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict, user_access_token: str = None) -> Email:
     existing = db.query(Email).filter(
         Email.message_id == email_data.get("message_id")
     ).first()
@@ -17,7 +17,7 @@ def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict) -> 
         logger.info(f"Email {email_data.get('message_id')} already exists")
         return existing
     
-    ai_results = email_processor.process_email(email_data)
+    ai_results = email_processor.process_email(email_data, send_notification=True, user_access_token=user_access_token)
     
     email = Email(
         user_id=user_id,
@@ -26,7 +26,8 @@ def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict) -> 
         subject=email_data.get("subject"),
         sender=email_data.get("sender"),
         body_text=email_data.get("body"),
-
+        
+        # AI results
         summary=ai_results.get("summary"),
         intent=ai_results.get("intent"),
         priority=ai_results.get("priority"),
@@ -34,8 +35,9 @@ def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict) -> 
         reply_suggestions=ai_results.get("reply_suggestions"),
         is_processed=True,
         processed_at=datetime.utcnow(),
-
-        is_important = (ai_results.get("priority") == "high"),
+        
+        # Metadata
+        is_important=(ai_results.get("priority") == "high"),
         received_at=datetime.utcnow()
     )
 
@@ -45,6 +47,7 @@ def save_email_with_ai_analysis(db: Session, user_id: int, email_data: Dict) -> 
 
     logger.info(f"save email {email.message_id} with AI analysis")
     return email
+
 
 def fetch_and_save_emails(db: Session, user: User, max_results: int = 10) -> List[Email]:
     from app.services.gmail_service import fetch_emails
@@ -82,9 +85,11 @@ def get_user_emails(
         query = query.filter(Email.intent == intent)
     return query.order_by(Email.received_at.desc()).limit(limit).all()
 
+
 def get_email_statistics(db: Session, user_id: int) -> Dict:
+    from sqlalchemy import func
+
     total = db.query(Email).filter(Email.user_id == user_id).count()
-    
     processed = db.query(Email).filter(
         Email.user_id == user_id,
         Email.is_processed == True
@@ -94,7 +99,7 @@ def get_email_statistics(db: Session, user_id: int) -> Dict:
         Email.user_id == user_id,
         Email.priority == "high"
     ).count()
-
+    
     unread = db.query(Email).filter(
         Email.user_id == user_id,
         Email.is_read == False
@@ -103,11 +108,11 @@ def get_email_statistics(db: Session, user_id: int) -> Dict:
     intents = db.query(Email.intent, func.count(Email.id)).filter(
         Email.user_id == user_id
     ).group_by(Email.intent).all()
-
+    
     return {
         "total": total,
-        "processed": processed, 
+        "processed": processed,
         "high_priority": high_priority,
         "unread": unread,
-        "intents": {intent: count for intent, count in intents if intent}
+        "by_intent": {intent: count for intent, count in intents if intent}
     }
