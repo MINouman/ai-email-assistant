@@ -10,6 +10,10 @@ from app.services.gmail_auth import get_google_auth_url, exchange_code_for_token
 from app.services.gmail_service import fetch_emails, get_user_profile
 from sqlalchemy import text
 
+from app.services.ai.email_processor import email_processor
+from app.redis_client import redis_client
+
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -122,3 +126,93 @@ def get_gmail_profile(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+
+@app.post("/ai/process-email")
+def process_email_ai(
+    message_id: str,
+    subject: str,
+    body: str,
+    sender: str
+):
+    try: 
+        email_data = {
+            "message_id": message_id,
+            "subject": subject, 
+            "body": body,
+            "sender": sender
+        }
+
+        result = email_processor.process_email(email_data)
+
+        return {
+            "status": "success",
+            "data": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.post("/ai/summarize")
+def summarize_email(subject: str, body: str):
+    try:
+        email_data = {
+            "message_id": "quick",
+            "subject": subject, 
+            "body": body
+        }
+        summary = email_processor.get_summary_only(email_data)
+
+        return {
+            "status": "success",
+            "summary": summary
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/emails/fetch-and-process")
+def fetch_and_process_emails(db: Session = Depends(get_db)):
+    user = db.query(User).first()
+
+    if not user or not user.google_access_token:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+    
+    try: 
+        emails = fetch_emails(user.google_access_token, max_results=5)
+        processed = email_processor.batch_process_emails(emails)
+
+        return {
+            "status": "success",
+            "count": len(processed),
+            "emails": processed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/cache/stats")
+def cache_statistics():
+    try:
+        info = redis_client.redis.info()
+        return {
+            "status": "healthy",
+            "connected": True,
+            "used_memory_human": info.get("used_memory_human"),
+            "total_keys": redis_client.redis.dbsize(),
+            "connected_clients": info.get("connected_clients")
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "connected": False, 
+            "error": str(e)
+        }
+
+@app.delete("/cache/clear")
+def clear_cache():
+    try:
+        redis_client.flush_all()
+        return {
+            "status":"success",
+            "message": "Cache Cleared successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
