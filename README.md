@@ -33,46 +33,6 @@ graph TB
     P -->|Periodic| B
 ```
 
-## System Data Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant API as FastAPI
-    participant DB as PostgreSQL
-    participant Cache as Redis
-    participant AI as Groq LLM
-    participant TG as Telegram
-    participant CAL as Google Calendar
-    
-    U->>API: POST /emails/sync
-    API->>Cache: Check last sync
-    API->>U: Fetch via OAuth
-    U-->>API: New emails
-    
-    loop For each email
-        API->>Cache: Check if processed
-        alt Not in cache
-            API->>AI: Process email
-            AI-->>API: Summary + Intent + Priority + NER
-            API->>DB: Store results
-            API->>Cache: Cache results
-            
-            alt High Priority
-                API->>TG: Send urgent notification
-            end
-            
-            alt Meeting detected
-                API->>CAL: Create calendar event
-                CAL-->>API: Event created
-                API->>TG: Send meeting alert
-            end
-        end
-    end
-    
-    API-->>U: Sync complete
-```
-
 ## Tech Stack
 
 | Component | Technology | Purpose |
