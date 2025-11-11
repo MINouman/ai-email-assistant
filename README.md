@@ -1,4 +1,4 @@
-# AI Email Assistant
+# MailMind: AI Email Assistant
 
 An intelligent email management system with AI-powered automation, notifications, and calendar integration.
 
@@ -45,7 +45,6 @@ graph TB
 | Auth | Google OAuth2 | Gmail access |
 | Notifications | python-telegram-bot | Real-time alerts |
 | Calendar | Google Calendar API | Event management |
-| Scheduler | APScheduler | Background tasks |
 | Containerization | Docker Compose | Deployment |
 
 ## Key Features
@@ -248,14 +247,10 @@ TELEGRAM_ENABLED=True
 ai-email-assistant/
 ├── backend/
 │   ├── app/
-│   │   ├── api/           # API routes
-│   │   ├── core/          # Config, auth
-│   │   ├── models/        # Database models
-│   │   ├── services/      # Business logic
-│   │   │   ├── ai_service.py
-│   │   │   ├── email_service.py
-│   │   │   ├── notification_service.py
-│   │   │   └── calendar_service.py
+│   │   ├── api/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── services/
 │   │   └── main.py
 │   ├── Dockerfile
 │   └── requirements.txt
@@ -278,7 +273,6 @@ docker compose exec backend python test_complete.py
 ```
 
 ## Development Roadmap
-
 - Phase 1: Foundation & Git setup - COMPLETED
 - Phase 2: Backend core (FastAPI + PostgreSQL) - COMPLETED
 - Phase 3: Docker containerization - COMPLETED
@@ -286,7 +280,3 @@ docker compose exec backend python test_complete.py
 - Phase 5: Notifications & calendar integration - COMPLETED
 - Phase 6: Streamlit dashboard - IN PROGRESS
 - Phase 7: Production deployment - PLANNED
-
-## License
-
-MIT License
