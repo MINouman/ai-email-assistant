@@ -1,7 +1,7 @@
 # Web Framework
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
-pydantic==2.5.0
+pydantic==2.5.3
 pydantic-settings==2.1.0
 
 # Database
@@ -22,7 +22,9 @@ google-api-python-client==2.116.0
 
 # Utilities
 python-dotenv==1.0.0
-httpx==0.26.0
+httpx==0.27.2
+nest-asyncio==1.6.0
+apscheduler==3.10.4
 
 # AI & LangChain Core
 langchain==0.2.14
@@ -34,18 +36,17 @@ langchain-groq==0.1.9
 langchain-huggingface==0.0.1
 langchain-google-genai==1.0.10
 
-# ML & Embeddings
+# ML & Embeddings - CPU only versions to reduce image size
 sentence-transformers==3.1.1
 transformers==4.43.3
-torch==2.5.1
 
 # Vector Store
 faiss-cpu==1.8.0
 tiktoken==0.5.2
 
 # API Clients
-groq==0.4.1
-google-generativeai>=0.7.0,<0.8.0
+groq==0.11.0
+google-generativeai==0.7.2
 
 # Task Queue & Caching
 redis==5.0.1
@@ -53,3 +54,17 @@ celery==5.3.6
 
 # Utilities
 python-dateutil==2.8.2
+pytz==2024.1
+
+# Telegram Bot
+python-telegram-bot==21.5
+
+# Additional Required Dependencies
+aiohttp==3.9.1
+urllib3==2.1.0
+requests==2.31.0
+certifi==2023.11.17
+charset-normalizer==3.3.2
+idna==3.6
+numpy==1.26.4
+typing-extensions==4.9.0
