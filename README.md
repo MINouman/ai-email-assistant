@@ -1,4 +1,4 @@
-# MailMind: AI Email Assistant
+# (Ambient Agent) MailMind: AI Email Assistant
 
 An intelligent email management system with AI-powered automation, notifications, and calendar integration.
 
