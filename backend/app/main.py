@@ -9,9 +9,14 @@ from fastapi.responses import RedirectResponse
 from app.services.gmail_auth import get_google_auth_url, exchange_code_for_token
 from app.services.gmail_service import fetch_emails, get_user_profile
 from sqlalchemy import text
+import logging
 
 from app.services.ai.email_processor import email_processor
 from app.redis_client import redis_client
+
+from app.services.notifications.telegram_bot import telegram_bot_handler
+
+from pydantic import BaseModel
 
 from app.services.email_service import (
     fetch_and_save_emails,
@@ -75,36 +80,42 @@ def login():
 
 @app.get("/auth/callback")
 def auth_callback(code: str, db: Session = Depends(get_db)):
+    """Handle OAuth callback"""
     try:
-        tokens = exchange_code_for_token(code)
-        user = User(
-            email="test@example.com",
-            full_name="Test User",
-            google_access_token=tokens["access_token"],
-            google_refresh_token=tokens["refresh_token"],
-            token_expiry=tokens["token_expiry"]
-        )
-
-        existing_user = db.query(User).filter(User.email == user.email).first()
-        if existing_user:
-            existing_user.google_access_token = tokens["access_token"]
-            existing_user.google_refresh_token = tokens["refresh_token"]
-            existing_user.token_expiry = tokens["token_expiry"]
+        from app.services.gmail_auth import exchange_code_for_token
         
-        else: 
+        tokens = exchange_code_for_token(code)
+        
+        from app.services.gmail_service import get_user_profile
+        profile = get_user_profile(tokens["access_token"])
+        
+        user = db.query(User).filter(User.email == profile["email"]).first()
+        
+        if user:
+            user.google_access_token = tokens["access_token"]
+            user.google_refresh_token = tokens["refresh_token"]
+            user.token_expiry = tokens["token_expiry"]
+        else:
+            user = User(
+                email=profile["email"],
+                full_name=profile["email"].split("@")[0],
+                google_access_token=tokens["access_token"],
+                google_refresh_token=tokens["refresh_token"],
+                token_expiry=tokens["token_expiry"]
+            )
             db.add(user)
         
         db.commit()
-        db.refresh(user)
-
+        
         return {
             "status": "success",
             "message": "Authentication successful!",
             "user_email": user.email
         }
+    
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
 
 @app.get("/emails/fetch")
 def fetch_user_emails(db: Session = Depends(get_db)):
@@ -420,44 +431,44 @@ def list_calendar_events(max_results: int = 10, db: Session = Depends(get_db)):
         "events": events
     }
 
+class CalendarEventCreate(BaseModel):
+    summary: str
+    description: str
+    start_time: str
+    duration_minutes: int = 60
+
 
 @app.post("/calendar/create-event")
 def create_calendar_event(
-    summary: str,
-    description: str,
-    start_time: str,
-    duration_minutes: int = 60,
+    event: CalendarEventCreate,
     db: Session = Depends(get_db)
 ):
-
     user = db.query(User).first()
-
+    
     if not user or not user.google_access_token:
         raise HTTPException(status_code=401, detail="User not authenticated")
-
-    if not calendar_service.initialize_service(user.google_access_token):
+    
+    if not calendar_service.initialize_service(user.google_access_token, user.google_refresh_token):
         raise HTTPException(status_code=500, detail="Failed to initialize calendar")
-
+    
     try:
         from dateutil import parser
         import pytz
-        dt = parser.parse(start_time)
+        dt = parser.parse(event.start_time)
         if dt.tzinfo is None:
             dt = pytz.UTC.localize(dt)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid datetime format: {e}")
-
+        raise HTTPException(status_code=400, detail=f"Invalid datetime: {e}")
+    
     result = calendar_service.create_event(
-        summary=summary,
-        description=description,
+        summary=event.summary,
+        description=event.description,
         start_time=dt,
-        duration_minutes=duration_minutes
+        duration_minutes=event.duration_minutes
     )
-
+    
     if result:
-        return {
-            "status": "success",
-            "event": result
-        }
+        return {"status": "success", "event": result}
     else:
         raise HTTPException(status_code=500, detail="Failed to create event")
+    
