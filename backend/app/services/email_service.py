@@ -70,20 +70,22 @@ def fetch_and_save_emails(db: Session, user: User, max_results: int = 10) -> Lis
     return saved_emails
 
 def get_user_emails(
-        db: Session, 
-        user_id: int,
-        # skip: int = 0,
-        limit: int = 20,
-        priority: str = None, 
-        intent: str = None
-) -> List[Email]:
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    priority: str = None,
+    intent: str = None
+) -> List[Email]:    
     query = db.query(Email).filter(Email.user_id == user_id)
+    
     if priority:
         query = query.filter(Email.priority == priority)
     
     if intent:
         query = query.filter(Email.intent == intent)
-    return query.order_by(Email.received_at.desc()).limit(limit).all()
+    
+    return query.order_by(Email.received_at.desc()).offset(skip).limit(limit).all()
 
 
 def get_email_statistics(db: Session, user_id: int) -> Dict:

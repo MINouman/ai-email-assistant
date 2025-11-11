@@ -55,7 +55,10 @@ def exchange_code_for_token(code: str):
     return {
         "access_token": credentials.token,
         "refresh_token": credentials.refresh_token, 
-        "token_expiry": credentials.expiry
+        "token_expiry": credentials.expiry,
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET
     }
 
 def get_gmail_service(access_token: str):

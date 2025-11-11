@@ -15,15 +15,24 @@ class CalendarService:
     def __init__(self):
         self.service = None
     
-    def initialize_service(self, access_token: str):
+    def initialize_service(self, access_token: str, refresh_token: str = None):
         try:
-            credentials = Credentials(token=access_token)
+            from app.config import settings
+            
+            credentials = Credentials(
+                token=access_token,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=settings.GOOGLE_CLIENT_ID,
+                client_secret=settings.GOOGLE_CLIENT_SECRET
+            )
+            
             self.service = build('calendar', 'v3', credentials=credentials)
             logger.info("Calendar service initialized")
             return True
         except Exception as e:
             logger.error(f"Calendar initialization failed: {e}")
-            return False
+        return False
     
     def extract_meeting_info(self, email_body: str, entities: dict) -> Optional[Dict]:
         if not entities:
